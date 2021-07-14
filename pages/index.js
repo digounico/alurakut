@@ -12,7 +12,7 @@ function ProfileSideBar(propriedades) {
 }
 
 export default function Home() {
-  const usuarioAleatorio = 'juunegreiros';
+  const usuarioAleatorio = 'digounico';
   const pessoasFavoritas = [
     'juunegreiros',
     'omariosouto',
