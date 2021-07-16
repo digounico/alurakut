@@ -1,6 +1,30 @@
 import styled from 'styled-components';
 import Box from '../Box';
 
+export function ProfileRelations({ titulo, itens }) {
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smallTitle">
+        {titulo} ({itens.length})
+      </h2>
+      <ul>
+        {
+          itens.slice(0, 6).map((itemAtual) => {
+            return (
+              <li key={itemAtual.id}>
+                <a href={`/users/${itemAtual.title}`}>
+                  <img src={itemAtual.image} />
+                  <span>{itemAtual.title}</span>
+                </a>
+              </li>
+            )
+          })
+        }
+      </ul>
+    </ProfileRelationsBoxWrapper>
+  )
+}
+
 export const ProfileRelationsBoxWrapper = styled(Box)`
   ul {
     display: grid;
@@ -49,4 +73,4 @@ export const ProfileRelationsBoxWrapper = styled(Box)`
       background-image: linear-gradient(0deg,#00000073,transparent);
     }
   }
-`; 
+`;
