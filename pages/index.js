@@ -1,4 +1,6 @@
 import React from 'react';
+import nookies from 'nookies';
+import jwt from 'jsonwebtoken';
 import MainGrid from '../src/components/MainGrid'
 import Box from '../src/components/Box'
 import { AlurakutMenu, AlurakutProfileSidebarMenuDefault, OrkutNostalgicIconSet } from '../src/lib/AlurakutCommons'
@@ -33,7 +35,7 @@ function ProfileRelationsBox({ title, itens }) {
             return (
               <li key={itemAtual.id}>
                 <a href={itemAtual.url}>
-                  <img src={itemAtual.image} />
+                  <img src={itemAtual.imageUrl} />
                   <span>{itemAtual.title}</span>
                 </a>
               </li>
@@ -45,20 +47,20 @@ function ProfileRelationsBox({ title, itens }) {
   )
 }
 
-export default function Home() {
+export default function Home(props) {
 
-  const usuarioAleatorio = 'digounico';
+  const usuarioAleatorio = props.githubUser;
 
   const [comunidades, setComunidades] = React.useState([]);
 
   const pessoasFavoritas = [
-    { id: 'juunegreiros', title: 'juunegreiros', image: 'https://github.com/juunegreiros.png', url: '/users/juunegreiros' },
-    { id: 'omariosouto', title: 'omariosouto', image: 'https://github.com/omariosouto.png', url: '/users/omariosouto' },
-    { id: 'peas', title: 'peas', image: 'https://github.com/peas.png', url: '/users/peas' },
-    { id: 'rafaballerini', title: 'rafaballerini', image: 'https://github.com/rafaballerini.png', url: '/users/rafaballerini' },
-    { id: 'marcobrunodev', title: 'marcobrunodev', image: 'https://github.com/marcobrunodev.png', url: '/users/marcobrunodev' },
-    { id: 'felipefialho', title: 'felipefialho', image: 'https://github.com/felipefialho.png', url: '/users/felipefialho' },
-    { id: 'mabarrio', title: 'mabarrio', image: 'https://github.com/mabarrio.png', url: '/users/mabarrio' }
+    { id: 'juunegreiros', title: 'juunegreiros', imageUrl: 'https://github.com/juunegreiros.png', url: '/users/juunegreiros' },
+    { id: 'omariosouto', title: 'omariosouto', imageUrl: 'https://github.com/omariosouto.png', url: '/users/omariosouto' },
+    { id: 'peas', title: 'peas', imageUrl: 'https://github.com/peas.png', url: '/users/peas' },
+    { id: 'rafaballerini', title: 'rafaballerini', imageUrl: 'https://github.com/rafaballerini.png', url: '/users/rafaballerini' },
+    { id: 'marcobrunodev', title: 'marcobrunodev', imageUrl: 'https://github.com/marcobrunodev.png', url: '/users/marcobrunodev' },
+    { id: 'felipefialho', title: 'felipefialho', imageUrl: 'https://github.com/felipefialho.png', url: '/users/felipefialho' },
+    { id: 'mabarrio', title: 'mabarrio', imageUrl: 'https://github.com/mabarrio.png', url: '/users/mabarrio' }
   ];
 
   const [seguidores, setSeguidores] = React.useState([]);
@@ -70,12 +72,12 @@ export default function Home() {
         return respostaDoServidor.json();
       })
       .then((respostaConvertida) => {
-        console.log(respostaConvertida);
+        // console.log(respostaConvertida);
         const seguidoresFetch = respostaConvertida.map((seguidor) => {
           return {
             id: seguidor.id,
             title: seguidor.login,
-            image: seguidor.avatar_url,
+            imageUrl: seguidor.avatar_url,
             url: seguidor.url
           }
         });
@@ -107,7 +109,7 @@ export default function Home() {
             return {
               id: comunidade.id,
               title: comunidade.title,
-              image: comunidade.imageUrl,
+              imageUrl: comunidade.imageUrl,
               url: ''
             }
           });
@@ -138,13 +140,23 @@ export default function Home() {
               const dadosDoForm = new FormData(e.target);
 
               const comunidade = {
-                id: new Date().toISOString(),
                 title: dadosDoForm.get('title'),
-                image: dadosDoForm.get('image'),
-                url: ''
+                imageUrl: dadosDoForm.get('image'),
+                creatorSlug: usuarioAleatorio,
               }
 
-              setComunidades([...comunidades, comunidade]);
+              fetch('api/comunidades', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(comunidade)
+              })
+                .then(async (response) => {
+                  const dados = await response.json();
+                  // console.log(dados.registroCriado);
+                  setComunidades([...comunidades, dados.registroCriado]);
+                })
             }}>
               <div>
                 <input
@@ -175,4 +187,34 @@ export default function Home() {
       </MainGrid>
     </>
   );
+}
+
+// Tipo um Intercept que roda no lado do servidor
+export async function getServerSideProps(context) {
+  console.log("Roda no Servidor");
+
+  const cookies = nookies.get(context);
+  const token = cookies.USER_TOKEN;
+
+  const { isAuthenticated } = await fetch('https://alurakut.vercel.app/api/auth', {
+    headers: {
+      Authorization: token
+    }
+  })
+    .then((resposta) => resposta.json());
+  if (!isAuthenticated) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false
+      }
+    }
+  }
+
+  const { githubUser } = jwt.decode(token);
+  return {
+    props: {
+      githubUser
+    },
+  }
 }
